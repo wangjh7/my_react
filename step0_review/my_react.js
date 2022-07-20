@@ -1,9 +1,11 @@
 // const element = <h1 title="foo">Hello</h1>
+//jsx会被转换为React.createElement方法的调用
 // const element = React.createElement(
 //   "h1",
 //   {title:"foo"},
 //   "Hello",
 // )
+//React.createElement的返回是下面这个对象
 const element = {
   type:"h1", //想要创建html元素时，type是string类型，指定我们想要创建的DOM节点类型。type也可以是一个函数
   props:{ //props中包含所有JSX标签的键值对

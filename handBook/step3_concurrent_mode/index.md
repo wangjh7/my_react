@@ -37,5 +37,5 @@ function performUnitOfWork(nextUnitOfWork){
   //TODO
 }
 ```
-我们使用requestIdleCallback来进行了循环调用 可以把它当成setTimeout 只不过不是我们告诉它什么时候去执行回调函数 而是当主线程空闲时 浏览器就会运行回调函数
-React不再使用[requestIdleCallback](https://github.com/facebook/react/issues/11171#issuecomment-417349573)了 它现在使用scheduler包 但是现在这种使用场景下 两者在概念上是一样的
+我们使用[requestIdleCallback](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)来进行了循环调用 可以把它当成setTimeout 只不过不是我们告诉它什么时候去执行回调函数 而是当主线程空闲时 浏览器就会运行回调函数
+[React不再使用requestIdleCallback了](https://github.com/facebook/react/issues/11171#issuecomment-417349573) 它现在使用scheduler包 但是现在这种使用场景下 两者在概念上是一样的

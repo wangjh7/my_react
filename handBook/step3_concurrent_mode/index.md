@@ -19,7 +19,7 @@ function render(element,container){
 问题在于 一旦我们开始运行render函数  这个函数就不会停止 直到渲染出完整的元素树
 如果这个元素树很大 render函数的运行会阻塞主线程很长时间 并且如果浏览器需要做一些高优先级的任务 比如处理用户输入或者保持一个动画顺滑 这些任务必须等待render函数执行完成之后才能开始
 
-所以我们将要把render函数的任务拆分成一个个小的单元 在render函数执行的过程中 如果浏览器有任何高优先级的任务要处理 我们要允许浏览器打断render函数的执行 直到所有的单元都执行完毕
+所以我们将要把render函数的任务拆分成一**个个小的单元** 在render函数执行的过程中 如果浏览器有任何高**优先级的任务**要处理 我们要允许浏览器**打断render函数的执行** 直到所有的单元都执行完毕
 ```js
 let nextUnitOfWork = null
 function workLoop(deadline){
@@ -37,5 +37,8 @@ function performUnitOfWork(nextUnitOfWork){
   //TODO
 }
 ```
-我们使用[requestIdleCallback](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)来进行了循环调用 可以把它当成setTimeout 只不过不是我们告诉它什么时候去执行回调函数 而是当主线程空闲时 浏览器就会运行回调函数
+我们使用[requestIdleCallback](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)来进行了**循环调用** 可以把它当成setTimeout 只不过不是我们告诉它什么时候去执行回调函数 而是当主线程空闲时 浏览器就会运行回调函数
 [React不再使用requestIdleCallback了](https://github.com/facebook/react/issues/11171#issuecomment-417349573) 它现在使用scheduler包 但是现在这种使用场景下 两者在概念上是一样的
+requestIdleCallback会向回调函数中传入一个deadline参数，我们可以用这个参数来知道距离浏览器下一次占据主线程（进行高优先级任务）之前还有多久
+
+为了让循环调用工作起来 我们需要**设置第一个任务单元** 然后完成performUnitOfWork函数 这个函数完成每个单元的任务 而且返回下个单元的任务

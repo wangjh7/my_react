@@ -14,4 +14,4 @@ Didact.render(
   container
 )
 ```
-
+![renderTree](./fiberTree.png "renderTree")

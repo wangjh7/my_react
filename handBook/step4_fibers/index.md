@@ -87,6 +87,7 @@ function performUnitOfWork(fiber){
   - 首先我们创建一个新的DOM节点并将它放在DOM树中 我们通过fiber.dom属性获取DOM节点
   ```js
   function performUnitOfWork(fiber){
+    // TODO add dom node
     if(!fiber.dom){
       fiber.dom = createDOM(fiber)
     }
@@ -97,3 +98,110 @@ function performUnitOfWork(fiber){
     // TODO return next unit of work
   }
   ```
+  - 接下来 我们为每一个child创建一个新的fiber
+  ```js
+  function performUnitOfWork(fiber){
+    // TODO add dom node
+    if(!fiber.dom){
+      fiber.dom = createDOM(fiber)
+    }
+    if(fiber.parent){
+      fiber.parent.dom.appendChild(fiber.dom)
+    }
+    // TODO create new fibers
+    const elements = fiber.props.children
+    let index = 0
+    let prevSibling = null
+    while(index < elements.length){
+      const element = elements[index]
+      const newFiber = {
+        type:element.type,
+        props:element.props,
+        parent:fiber,
+        dom:null,
+      }
+    }
+    // TODO return next unit of work
+  }
+  ```
+
+  - 然后 我们把它们新建的fiber设置为child或者sibling 第一个是child 其余的是sibling
+  ```js
+  function performUnitOfWork(fiber){
+    // TODO add dom node
+    if(!fiber.dom){
+      fiber.dom = createDOM(fiber)
+    }
+    if(fiber.parent){
+      fiber.parent.dom.appendChild(fiber.dom)
+    }
+    // TODO create new fibers
+    const elements = fiber.props.children
+    let index = 0
+    let prevSibling = null
+    while(index < elements.length){
+      const element = elements[index]
+      const newFiber = {
+        type:element.type,
+        props:element.props,
+        parent:fiber,
+        dom:null,
+      }
+
+
+      if(index == 0) {
+        fiber.child = newFiber
+      } else {
+        prevSibling.sibling = newFiber
+      }
+      prevSibling = newFiber
+      index++
+    }
+    // TODO return next unit of work
+  }
+  ```
+
+  - 最后 我们找到下一个工作单元 先尝试child 没有child就返回sibling 没有sibling就返回uncle节点
+  ```js
+  function performUnitOfWork(fiber){
+    // TODO add dom node
+    if(!fiber.dom){
+      fiber.dom = createDOM(fiber)
+    }
+    if(fiber.parent){
+      fiber.parent.dom.appendChild(fiber.dom)
+    }
+    // TODO create new fibers
+    const elements = fiber.props.children
+    let index = 0
+    let prevSibling = null
+    while(index < elements.length){
+      const element = elements[index]
+      const newFiber = {
+        type:element.type,
+        props:element.props,
+        parent:fiber,
+        dom:null,
+      }
+      if(index == 0) {
+        fiber.child = newFiber
+      } else {
+        prevSibling.sibling = newFiber
+      }
+      prevSibling = newFiber
+      index++
+    }
+    // TODO return next unit of work
+    if(fiber.child){
+      return fiber.child
+    }
+    let nextFiber = fiber
+    while(nextFiber){
+      if(nextFiber.sibling){
+        return nextFiber.sibling
+      }
+      nextFiber = fiber.parent
+    }
+  }
+  ```
+  这就是我们的**performUnitOfWork**函数

@@ -74,16 +74,23 @@ function performUnitOfWork(fiber){
   }
 }
 
-function reconcileChildren(wipFiber,elements){
+function reconcileChildren(wipFiber,elements){ //wipFiber和elements是父子元素关系
   let index = 0
+  let oldFiber = wipFiber.alternate && wipFiber.alternate.child //wipFiber.alternate 是上一次commit阶段的fiber树的根节点
   let prevSibling = null
-  while(index < elements.length){
+  while(index < elements.length || oldFiber != null){
     const element = elements[index]
-    const newFiber = {
-      type:element.type,
-      props:element.props,
-      parent:fiber,
-      dom:null,
+    let newFiber = null
+    //compare oldFiber to element
+    const sameType = oldFiber && element && element.type == oldFiber.type
+    if(sameType){
+      //TODO update the node
+    } 
+    if (element && !sameType){
+      //TODO add this node
+    }
+    if(oldFiber && !sameType){
+      //TODO delete the oldFiber's node
     }
     if(index == 0) {
       fiber.child = newFiber

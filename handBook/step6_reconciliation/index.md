@@ -140,4 +140,36 @@ function reconcileChildren(wipFiber,elements){
 - 如果旧的fiber和新的元素有相同的类型 我们保留这个dom节点 把新的属性更新上去
 - 如果类型不相同 而且有新的元素 这意味着我们要创建一个新的dom节点
 - 如果类型不同 而且有老的fiber 我们要删除对应的dom节点
+
 *React在这里利用key 来实现了性能更好的协调 它会检查chilren在元素树组中位置的变化*
+
+```js
+const sameType = oldFiber && element && element.type == oldFiber.type
+if(sameType){
+  // update the node
+  newFiber = {
+    type:oldFiber.type,
+    props:element.props,
+    dom:oldFiber.dom,
+    parent:wipFiber,
+    alternate:oldFiber,
+    effectTag:"UPDATE",
+  }
+} 
+```
+旧的fiber和新的元素有相同类型的时候 我们创建一个新的fiber dom属性保留旧fiber的dom props属性为新的元素的props 我们还增加了一个effectTag属性 在commit阶段会用到这个属性
+
+```js
+if (element && !sameType){
+  // add this node
+  newFiber = {
+    type:element.type,
+    props:element.props,
+    dom:null,
+    parent:wipFiber,
+    alternate:null,
+    effectTag:"PLACEMENT",
+  }
+}
+```
+像这种需要创建新的dom节点的情况 我们将新的fiber的effectTag属性标记为PLACEMENT

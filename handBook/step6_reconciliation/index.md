@@ -157,7 +157,7 @@ if(sameType){
   }
 } 
 ```
-旧的fiber和新的元素有相同类型的时候 我们创建一个新的fiber dom属性保留旧fiber的dom props属性为新的元素的props 我们还增加了一个effectTag属性 在commit阶段会用到这个属性
+旧的fiber和新的元素有相同类型的时候 我们创建一个新的fiber dom属性保留旧fiber的dom props属性为新的元素的props 我们还增加了一个effectTag属性 **UPDATE** 在commit阶段会用到这个属性
 
 ```js
 if (element && !sameType){
@@ -172,4 +172,36 @@ if (element && !sameType){
   }
 }
 ```
-像这种需要创建新的dom节点的情况 我们将新的fiber的effectTag属性标记为PLACEMENT
+像这种需要创建新的dom节点的情况 我们将新的fiber的effectTag属性标记为**PLACEMENT**
+
+```js
+if(oldFiber && !sameType){
+  // delete the oldFiber's node
+  oldFiber.effectTag = "DELETION"
+  deletions.push(oldFiber)
+}
+```
+像这种需要删除这个节点的情况 我们将旧fiber的effectTag属性设置为**DELETION**
+但是 我们把fiber树放到dom上的时候 我们是从**work in progress fiber树**的root节点开始递归的
+work in progress fiber树没有这些旧的fiber
+
+```js
+function render(element, container) {
+  // wipRoot = {
+  //   dom: container,
+  //   props: {
+  //     children: [element],
+  //   },
+  //   alternate: currentRoot,
+  // }
+  deletions = []
+  // nextUnitOfWork = wipRoot
+}
+​
+// let nextUnitOfWork = null
+// let currentRoot = null
+// let wipRoot = null
+let deletions = null
+```
+所以我们需要一个数组来储存我们想要删除的节点
+

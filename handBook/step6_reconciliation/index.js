@@ -25,6 +25,7 @@ function commitWork(fiber){
 
 let nextUnitOfWork = null
 let currentRoot = null
+let deletions = null
 let wipRoot = null
 
 function render(element,container){
@@ -35,6 +36,7 @@ function render(element,container){
     },
     alternate:currentRoot,
   }
+  deletions = []
   nextUnitOfWork = wipRoot
 }
 
@@ -106,7 +108,9 @@ function reconcileChildren(wipFiber,elements){ //wipFiber和elements是父子元
       }
     }
     if(oldFiber && !sameType){
-      //TODO delete the oldFiber's node
+      // delete the oldFiber's node
+      oldFiber.effectTag = "DELETION"
+      deletions.push(oldFiber)
     }
     if(index == 0) {
       fiber.child = newFiber

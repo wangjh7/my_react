@@ -205,3 +205,119 @@ let deletions = null
 ```
 所以我们需要一个数组来储存我们想要删除的节点
 
+```js
+function commitRoot() {
+  deletions.forEach(commitWork)
+  // commitWork(wipRoot.child)
+  // currentRoot = wipRoot
+  // wipRoot = null
+}
+```
+之后我们对DOM做出修改的时候 我们要用到这个数组里的fiber
+
+接下来 我们修改commitWork函数 来**处理一下新的effectTag属性**
+
+```js
+function commitWork(fiber){
+  // if(!fiber){
+  //   return
+  // }
+  // const domParent = fiber.parent.dom
+  if(fiber.effectTag == "PLACEMENT" && fiber.dom != null){
+    domParent.append(fiber.dom)
+  }
+  // commitWork(fiber.child)
+  // commitWork(fiber.sibling)
+}
+```
+如果fiber的effectTag属性为PLACEMENT 我们要做的和之前一样 把fiber的dom节点挂载到其父fiber节点的dom上
+
+```js
+function commitWork(fiber){
+  // if(!fiber){
+  //   return
+  // }
+  // const domParent = fiber.parent.dom
+  // if(fiber.effectTag == "PLACEMENT" && fiber.dom != null){
+  //   domParent.append(fiber.dom)
+  // }
+  else if (fiber.effectTag == "DELETION"){
+    domParent.removeChild(fiber.dom)
+  }
+  // commitWork(fiber.child)
+  // commitWork(fiber.sibling)
+}
+```
+如果是DELETION 我们把fiber的dom节点从其父fiber的dom上去除
+
+```js
+function commitWork(fiber){
+  // if(!fiber){
+  //   return
+  // }
+  // const domParent = fiber.parent.dom
+  // if(fiber.effectTag == "PLACEMENT" && fiber.dom != null){
+  //   domParent.append(fiber.dom)
+  // } 
+  else if (fiber.effectTag == "UPDATE" && fiber.dom != null){
+    updateDom(
+      fiber.dom,
+      fiber.alternate.props,
+      fiber.props,
+    )
+  } 
+  // else if (fiber.effectTag == "DELETION"){
+  //   domParent.removeChild(fiber.dom)
+  // }
+  // commitWork(fiber.child)
+  // commitWork(fiber.sibling)
+}
+```
+如果是UPDATE 我们需要在已经存在的dom上更新新的属性
+
+然后我们在**updateDom**这个函数中完成dom的更新
+
+```js
+const isProperty = key => key != "children"
+const isNew = (prev,next) => key => prev[key] != next[key]
+const isGone = (prev,next) => key => !(key in next)
+function updateDom(dom, prevProps, nextProps){
+  //Remove old properties
+  Object.keys(prevProps).filter(isProperty).filter(isGone(prevProps,nextProps)).forEach(name=>{
+    dom[name] = ""
+  })
+  //Set new or changed properties
+  Object.keys(nextProps).filter(isProperty).filter(isNew(prevProps,nextProps)).forEach(name=>{
+    dom[name] = nextProps[name]
+  })
+}
+```
+我们对比新旧fiber上的属性 去掉删除的属性 把新的或者修改过的属性放到dom节点上
+
+```js
+const isEvent = key => key.startWith("on")
+const isProperty = key => key != "children" && !isEvent(key)
+```
+我们需要过滤出时间监听属性 特殊处理
+
+```js
+//Remove old or changed event listeners
+Object.keys(prevProps).filter(isEvent).filter(
+  key=>!(key in nextProps) || isNew(prevProps,nextProps)(key) //prevProps中有 但是nextProps中没有的属性 或者 nextProps的值改变了
+).forEach(name => {
+  const eventType = name.toLowerCase().substring(2)
+  dom.removeEventListener(eventType,prevProps[name])
+})
+```
+如果事件处理函数改变了 我们把这个事件处理函数从dom上去除
+
+```js
+//Add event listeners
+Object.keys(nextProps).filter(isEvent).filter(isNew(prevProps,nextProps)).forEach(name => {
+  const eventType = name.toLowerCase().substring(2)
+  dom.addEventListener(eventType,nextProps[name])
+})
+```
+然后我们加上新的事件处理函数
+
+在[sandBox](https://codesandbox.io/s/didact-6-96533)上试一下reconciliation

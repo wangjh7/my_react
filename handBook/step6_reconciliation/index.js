@@ -7,7 +7,35 @@ function createDOM (fiber) {
   return dom
 }
 
+const isEvent = key => key.startWith("on")
+const isProperty = key => key != "children" && !isEvent(key)
+const isNew = (prev,next) => key => prev[key] != next[key] //新的键 或者 这个键的值改变了
+const isGone = (prev,next) => key => !(key in next)
+function updateDom(dom, prevProps, nextProps){
+  //Remove old or changed event listeners
+  Object.keys(prevProps).filter(isEvent).filter(
+      key=>!(key in nextProps) || isNew(prevProps,nextProps)(key) //prevProps中有 但是nextProps中没有的属性 或者 nextProps的值改变了
+    ).forEach(name => {
+      const eventType = name.toLowerCase().substring(2)
+      dom.removeEventListener(eventType,prevProps[name])
+    })
+  //Remove old properties
+  Object.keys(prevProps).filter(isProperty).filter(isGone(prevProps,nextProps)).forEach(name=>{
+    dom[name] = ""
+  })
+  //Set new or changed properties
+  Object.keys(nextProps).filter(isProperty).filter(isNew(prevProps,nextProps)).forEach(name=>{
+    dom[name] = nextProps[name]
+  })
+  //Add event listeners
+  Object.keys(nextProps).filter(isEvent).filter(isNew(prevProps,nextProps)).forEach(name => {
+    const eventType = name.toLowerCase().substring(2)
+    dom.addEventListener(eventType,nextProps[name])
+  })
+}
+
 function commitRoot(){
+  deletions.forEach(commitWork)
   commitWork(wipRoot.child)
   currentRoot = wipRoot
   wipRoot = null
@@ -18,7 +46,17 @@ function commitWork(fiber){
     return
   }
   const domParent = fiber.parent.dom
-  domParent.append(fiber.dom)
+  if(fiber.effectTag == "PLACEMENT" && fiber.dom != null){
+    domParent.append(fiber.dom)
+  } else if (fiber.effectTag == "UPDATE" && fiber.dom != null){
+    updateDom(
+      fiber.dom,
+      fiber.alternate.props,
+      fiber.props,
+    )
+  } else if (fiber.effectTag == "DELETION"){
+    domParent.removeChild(fiber.dom)
+  }
   commitWork(fiber.child)
   commitWork(fiber.sibling)
 }
@@ -112,8 +150,11 @@ function reconcileChildren(wipFiber,elements){ //wipFiber和elements是父子元
       oldFiber.effectTag = "DELETION"
       deletions.push(oldFiber)
     }
+    if (oldFiber) {
+      oldFiber = oldFiber.sibling
+    }
     if(index == 0) {
-      fiber.child = newFiber
+      wipFiber.child = newFiber
     } else {
       prevSibling.sibling = newFiber
     }

@@ -64,9 +64,13 @@ function commitWork(fiber){
   if(!fiber){
     return
   }
-  const domParent = fiber.parent.dom
+  let domParentFiber = fiber.parent
+  while(!domParentFiber.dom){
+    domParentFiber = domParentFiber.parent
+  }
+  const domParent = domParentFiber.dom
   if(fiber.effectTag == "PLACEMENT" && fiber.dom != null){
-    domParent.append(fiber.dom)
+    domParent.appendChild(fiber.dom)
   } else if (fiber.effectTag == "UPDATE" && fiber.dom != null){
     updateDom(
       fiber.dom,
@@ -74,10 +78,18 @@ function commitWork(fiber){
       fiber.props,
     )
   } else if (fiber.effectTag == "DELETION"){
-    domParent.removeChild(fiber.dom)
+    commitDeletion(fiber,domParent)
   }
   commitWork(fiber.child)
   commitWork(fiber.sibling)
+}
+
+function commitDeletion(fiber,domParent){
+  if(fiber.dom){
+    domParent.removeChild(fiber.dom)
+  } else {
+    commitDeletion(fiber.chid,domParent)
+  }
 }
 
 let nextUnitOfWork = null
@@ -113,16 +125,13 @@ requestIdleCallback(workLoop)
 
 function performUnitOfWork(fiber){
   const isFunctionComponent = fiber.type instanceof Function
-  
-  // TODO add dom node
-  if(!fiber.dom){
-    fiber.dom = createDOM(fiber)
+  if(isFunctionComponent){
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
   }
 
-  const elements = fiber.props.children
-  reconcileChildren(fiber, elements)
-
-  // TODO return next unit of work
+  // return next unit of work
   if(fiber.child){
     return fiber.child
   }
@@ -133,6 +142,20 @@ function performUnitOfWork(fiber){
     }
     nextFiber = fiber.parent
   }
+}
+
+function updateHostComponent(fiber){
+  if(!fiber.dom){
+    fiber.dom = createDOM(fiber)
+  }
+
+  const elements = fiber.props.children
+  reconcileChildren(fiber, elements)
+}
+
+function updateFunctionComponent(fiber){
+  const children = [fiber.type(fiber.props)]
+  reconcileChildren(fiber,children)
 }
 
 function reconcileChildren(wipFiber,elements){ //wipFiber和elements是父子元素关系
